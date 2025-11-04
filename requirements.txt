@@ -1,0 +1,16 @@
+# Django Framework
+Django==5.2.7
+
+# Celery for async task processing
+celery==5.5.3
+redis==5.2.1
+
+# Environment variables management
+python-dotenv==1.2.1
+
+# Optional: Celery monitoring and management
+# flower>=2.0.0
+
+# Optional: Database drivers (uncomment if needed)
+# psycopg2-binary>=2.9.0  # PostgreSQL
+# mysqlclient>=2.2.0      # MySQL

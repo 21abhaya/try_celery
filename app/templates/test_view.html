@@ -12,9 +12,15 @@
         <li>Mul Result: {{ mul_result }}</li>
         <li>Xsum Result: {{ xsum_result }}</li>
         <li>Without Celery Result: {{ without_celery_result }}</li>
+        <li>Submitted value: {{ value }}
     </ul>
     <div>
-        <Button class="count-button">Count</Button>
+        <form method="post">
+            {% csrf_token %}
+            <label for="value"> Enter a value:</label>
+            <input type="text" id="value" name="value">
+            <button type="submit">Send Value</button>
+        </form>
     </div>
 </body>
 </html>

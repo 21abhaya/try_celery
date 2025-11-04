@@ -14,11 +14,7 @@ def test_view(request):
     result_xsum = xsum.delay([1, 2, 3, 4, 5])
     result_without_celery = sum_without_celery(4, 6)
     
-    context = {
-        'without_celery_result': result_without_celery,
-        'value': value,
-    }
-    
+    context = {}
     
     try:
         result_add = result_add.get(timeout=5)
@@ -29,11 +25,13 @@ def test_view(request):
             'add_result': result_add,
             'mul_result': result_mul,
             'xsum_result': result_xsum,
+            'without_celery_result': result_without_celery,
+            'value': value,
         })
 
     except Exception as e:
         print(f"Error retrieving task results: {e}")
-        context = {}
+        
         context.update({
             'add_result': 'Could not retrieve result in time',
             'mul_result': 'Could not retrieve result in time',

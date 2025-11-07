@@ -6,21 +6,26 @@
     <title>Celery Task Results</title>
 </head>
 <body>
-    <h1>Celery Task Results</h1>
-    <ul>
+    <h1>Tinkering with Celery</h1>
+    {% comment %} <ul>
         <li>Add Result: {{ add_result }}</li>
         <li>Mul Result: {{ mul_result }}</li>
         <li>Xsum Result: {{ xsum_result }}</li>
         <li>Without Celery Result: {{ without_celery_result }}</li>
         <li>Submitted value: {{ value }}
-    </ul>
+    </ul> {% endcomment %}
     <div>
         <form method="post">
             {% csrf_token %}
             <label for="value"> Enter a value:</label>
-            <input type="text" id="value" name="value">
+            <input type="text" id="value" name="value" required=True>
             <button type="submit">Send Value</button>
         </form>
+        <div>
+            {% if request.POST.value %}
+                <p>You submitted the value: {{ request.POST.value }}</p>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>

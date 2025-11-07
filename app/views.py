@@ -1,44 +1,31 @@
 from django.shortcuts import render
-from .tasks import add, mul, xsum
+from django.conf import settings
+
+from .tasks import send_mail_task
 
 
-def sum_without_celery(a, b):
-    return a + b
+
+def check_if_divisible_by_5(value):
+    if value % 5 == 0:
+        return True
+
 
 def test_view(request):
+    value = request.POST.get('value', 1)
+    if value:
+        value = int(value)
+    subject = "Tinkering around with Celery"
+    message = f"This is a test email sent from a Celery task when the input value is {value}"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = settings.DEFAULT_FROM_EMAIL.split(',')
     
-    value = request.POST.get('value', "")
-    
-    result_add = add.delay(4000000, 6000000)
-    result_mul = mul.delay(4, 6)
-    result_xsum = xsum.delay([1, 2, 3, 4, 5])
-    result_without_celery = sum_without_celery(4, 6)
-    
-    context = {}
-    
-    try:
-        result_add = result_add.get(timeout=5)
-        result_mul = result_mul.get(timeout=5)
-        result_xsum = result_xsum.get(timeout=5)
-
-        context.update({
-            'add_result': result_add,
-            'mul_result': result_mul,
-            'xsum_result': result_xsum,
-            'without_celery_result': result_without_celery,
-            'value': value,
-        })
-
-    except Exception as e:
-        print(f"Error retrieving task results: {e}")
-        
-        context.update({
-            'add_result': 'Could not retrieve result in time',
-            'mul_result': 'Could not retrieve result in time',
-            'xsum_result': 'Could not retrieve result in time',
-            'without_celery_result': result_without_celery,
-            'value': value,
-        })
-
-    return render(request, 'test_view.html', context)
+    if check_if_divisible_by_5(value):
+        send_mail_task.delay(
+            subject,
+            message,
+            from_email,
+            recipient_list
+        )
+            
+    return render(request, 'test_view.html')
 

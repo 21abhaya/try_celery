@@ -4,29 +4,176 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Celery Task Results</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            font-size: 16px;
+            --bg: #0f172a;
+            --panel: rgba(15, 23, 42, 0.85);
+            --accent: #38bdf8;
+            --accent-dark: #0284c7;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at top, rgba(56, 189, 248, 0.3), transparent 60%),
+                        radial-gradient(circle at 20% 20%, rgba(248, 250, 252, 0.2), transparent 35%),
+                        var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .card {
+            width: min(640px, 100%);
+            background: var(--panel);
+            border: 1px solid rgba(248, 250, 252, 0.1);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(14px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(56, 189, 248, 0.25), transparent 65%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        h1 {
+            margin: 0 0 1rem;
+            font-size: 2rem;
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            margin: 0 0 2rem;
+            color: var(--muted);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        input[type="text"] {
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(15, 23, 42, 0.65);
+            color: var(--text);
+            font-size: 1rem;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3);
+        }
+
+        button {
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: #0b1120;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 30px rgba(2, 132, 199, 0.35);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .result-block {
+            margin-top: 2rem;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            background: rgba(15, 23, 42, 0.55);
+        }
+
+        .result-title {
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.35rem;
+        }
+
+        .result-value {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .tagline {
+            margin-top: 2.5rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <h1>Tinkering with Celery</h1>
-    {% comment %} <ul>
-        <li>Add Result: {{ add_result }}</li>
-        <li>Mul Result: {{ mul_result }}</li>
-        <li>Xsum Result: {{ xsum_result }}</li>
-        <li>Without Celery Result: {{ without_celery_result }}</li>
-        <li>Submitted value: {{ value }}
-    </ul> {% endcomment %}
-    <div>
-        <form method="post">
+    <main class="card">
+        <h1>Tinkering with Celery</h1>
+        <p class="subtitle">Send a value, kick off your task, and let Celery handle the heavy lifting.</p>
+        <form method="post" id="celery-form">
             {% csrf_token %}
-            <label for="value"> Enter a value:</label>
-            <input type="text" id="value" name="value" required=True>
+            <label for="value">Enter a value</label>
+            <input type="text" id="value" name="value" required>
             <button type="submit">Send Value</button>
         </form>
-        <div>
-            {% if request.POST.value %}
-                <p>You submitted the value: {{ request.POST.value }}</p>
-            {% endif %}
-        </div>
-    </div>
+        {% if request.POST.value %}
+            <section class="result-block" id="submitted-value">
+                <p class="result-title">Last submitted value</p>
+                <p class="result-value">{{ request.POST.value }}</p>
+            </section>
+        {% endif %}
+        <section class="result-block" aria-live="polite">
+            <p class="result-title">Email recipient</p>
+            <p class="result-value">{{ recipient_list }}</p>
+        </section>
+        <p class="tagline">Celery · Django · Async experiments</p>
+    </main>
+    <script>
+        const form = document.getElementById("celery-form");
+        form.addEventListener("submit", () => {
+            form.classList.add("is-loading");
+        });
+    </script>
 </body>
 </html>
 
